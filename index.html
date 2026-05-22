@@ -179,6 +179,47 @@ html,body{
   left:18px;
 }
 
+/* ── NUMBER GRID ── */
+#num-grid-wrap{
+  width:100%;max-width:580px;
+  margin-bottom:6px;
+}
+#num-grid-label{
+  font-size:10px;letter-spacing:.3em;color:var(--ink-soft);font-weight:700;
+  text-align:center;margin-bottom:6px;text-transform:uppercase;
+}
+#num-grid{
+  display:flex;flex-wrap:wrap;gap:5px;justify-content:center;
+}
+.num-btn{
+  width:34px;height:34px;border-radius:8px;
+  border:2px solid rgba(183,148,232,.35);
+  background:rgba(255,255,255,.6);
+  color:var(--ink-soft);
+  font-family:'Mochiy Pop One',sans-serif;
+  font-size:13px;
+  cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 5px rgba(180,148,232,.12);
+}
+.num-btn:hover{
+  background:rgba(255,180,220,.35);border-color:var(--pink);color:var(--pink-deep);
+  transform:translateY(-1px);box-shadow:0 4px 8px rgba(232,74,156,.2);
+}
+.num-btn.selected{
+  background:linear-gradient(135deg,var(--pink),var(--lavender));
+  border-color:var(--lavender);color:white;
+  box-shadow:0 3px 10px rgba(232,74,156,.35);
+  transform:translateY(-1px);
+}
+.num-btn.drawn{
+  background:rgba(180,148,232,.15);border-color:rgba(180,148,232,.25);
+  color:rgba(74,57,96,.3);cursor:default;transform:none;box-shadow:none;
+}
+.num-btn.drawn.selected{
+  background:rgba(232,74,156,.15);border-color:rgba(232,74,156,.3);
+}
+
 /* ── CAT + CRYSTAL SCENE ── */
 #scene{
   flex-shrink:0;
@@ -589,17 +630,23 @@ html,body{
   </div>
 
   <div id="config">
-    <div class="config-row" id="number-config">
-      <span class="config-label">範囲 1〜</span>
-      <input type="number" class="num-input" id="total-input" value="35" min="1" max="999">
-      <span class="config-label">| 1回に</span>
-      <input type="number" class="num-input draw-count-input" id="draw-count" value="1" min="1" max="20">
-      <span class="config-label">個 |</span>
-      <label class="sound-toggle">
-        <input type="checkbox" id="sound-toggle" checked>
-        <span class="toggle-track"></span>
-        <span>音声</span>
-      </label>
+    <div id="number-config">
+      <div id="num-grid-wrap">
+        <div id="num-grid-label">母数を選択</div>
+        <div id="num-grid"></div>
+      </div>
+      <div class="config-row">
+        <span class="config-label">または直接入力 1〜</span>
+        <input type="number" class="num-input" id="total-input" value="35" min="1" max="999">
+        <span class="config-label">| 1回に</span>
+        <input type="number" class="num-input draw-count-input" id="draw-count" value="1" min="1" max="20">
+        <span class="config-label">個 |</span>
+        <label class="sound-toggle">
+          <input type="checkbox" id="sound-toggle" checked>
+          <span class="toggle-track"></span>
+          <span>音声</span>
+        </label>
+      </div>
     </div>
     <div class="config-row" id="text-config" style="display:none;">
       <textarea class="text-area" id="text-input" placeholder="抽選対象を1行ずつ入力（例：たろう / じろう / さぶろう...）"></textarea>
@@ -909,11 +956,23 @@ function resetDraw() {
 
 // React to config changes live
 function attachConfigListeners(){
-  ['total-input', 'draw-count', 'draw-count-text', 'text-input'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.addEventListener('change', () => { if(!isRolling) reset(); });
-    if(el && el.tagName === 'TEXTAREA') el.addEventListener('blur', () => { if(!isRolling) reset(); });
+  document.getElementById('total-input').addEventListener('change', () => {
+    if(isRolling) return;
+    const v = Math.max(1, Math.min(999, parseInt(document.getElementById('total-input').value) || 35));
+    document.getElementById('total-input').value = v;
+    total = v;
+    // sync grid highlight: only within 1-35
+    document.querySelectorAll('.num-btn').forEach(b => {
+      b.classList.toggle('selected', +b.dataset.n === v);
+      b.classList.remove('drawn');
+    });
+    reset();
   });
+  ['draw-count', 'draw-count-text'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => { if(!isRolling) reset(); });
+  });
+  const ta = document.getElementById('text-input');
+  ta.addEventListener('blur', () => { if(!isRolling) reset(); });
 }
 
 // ── CAT STATES ─────────────────────────────────────────────
@@ -1204,12 +1263,52 @@ function updateUI() {
       list.appendChild(hi);
     });
   }
+  updateDrawnGrid();
+}
+
+function updateDrawnGrid() {
+  if(mode !== 'number') return;
+  const drawn = new Set(history.map(Number));
+  document.querySelectorAll('.num-btn').forEach(b => {
+    const n = +b.dataset.n;
+    if(n <= total){
+      b.classList.toggle('drawn', drawn.has(n));
+      b.classList.remove('selected');
+      if(n === total) b.classList.add('selected');
+    }
+  });
+}
+
+// ── NUMBER GRID ─────────────────────────────────────────────
+function buildGrid() {
+  const grid = document.getElementById('num-grid');
+  grid.innerHTML = '';
+  for(let i = 1; i <= 35; i++){
+    const btn = document.createElement('button');
+    btn.className = 'num-btn' + (i === total ? ' selected' : '');
+    btn.textContent = i;
+    btn.dataset.n = i;
+    btn.addEventListener('click', () => selectTotal(i));
+    grid.appendChild(btn);
+  }
+}
+
+function selectTotal(n) {
+  if(isRolling) return;
+  total = n;
+  document.getElementById('total-input').value = n;
+  document.querySelectorAll('.num-btn').forEach(b => {
+    b.classList.toggle('selected', +b.dataset.n === n);
+    b.classList.remove('drawn');
+  });
+  reset();
 }
 
 // ── START ──────────────────────────────────────────────────
 initBg();
 syncSoundToggles();
 attachConfigListeners();
+buildGrid();
 reset();
 </script>
 
