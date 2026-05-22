@@ -412,39 +412,83 @@ html,body{
 /* ── RESULT SCREEN ── */
 #result-screen{
   position:fixed;inset:0;z-index:200;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
   opacity:0;pointer-events:none;transition:opacity 0.4s;
-  background:linear-gradient(135deg,rgba(253,231,243,.96) 0%,rgba(232,213,255,.96) 50%,rgba(200,230,255,.96) 100%);
+  background:linear-gradient(135deg,rgba(253,231,243,.97) 0%,rgba(232,213,255,.97) 50%,rgba(200,230,255,.97) 100%);
   backdrop-filter:blur(20px);
-  overflow-y:auto;padding:20px;
+  overflow:hidden;
 }
 #result-screen.show{opacity:1;pointer-events:all;}
-#result-cat-wrap{
-  width:clamp(100px,16vw,140px);height:clamp(100px,16vw,140px);
-  margin-bottom:8px;flex-shrink:0;
-  animation:result-cat-in .6s cubic-bezier(.17,.67,.3,1.5) both;
+
+/* 猫：背景に全面表示、薄く透過 */
+#result-cat-bg{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+  opacity:.55;
+  animation:result-cat-in .7s cubic-bezier(.17,.67,.3,1.4) both;
 }
-@keyframes result-cat-in{0%{transform:scale(0) rotate(-30deg);opacity:0;}60%{transform:scale(1.15) rotate(5deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
+#result-cat-bg svg{
+  width:min(80vh,80vw);
+  height:min(80vh,80vw);
+  filter:blur(0.5px);
+}
+@keyframes result-cat-in{
+  0%{transform:scale(.6);opacity:0;}
+  100%{transform:scale(1);opacity:.55;}
+}
+
+/* 前景コンテンツ：縦中央 */
+#result-content{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:6px;
+  padding:20px;
+}
+
+/* 数字：超大きく、くっきり読める */
 #result-num-big{
   font-family:'Mochiy Pop One',sans-serif;
-  font-size:clamp(70px,15vw,160px);line-height:.9;
-  background:linear-gradient(135deg,var(--pink-deep) 0%,var(--lavender) 50%,var(--gold-deep) 100%);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  filter:drop-shadow(0 8px 16px rgba(232,74,156,.4));
-  animation:big-num-in .6s cubic-bezier(.17,.67,.3,1.4) both;
-  text-align:center;word-break:break-all;max-width:90vw;padding:0 16px;flex-shrink:0;
+  font-size:clamp(130px,30vw,360px);
+  line-height:1.0;
+  padding:0 2vw;
+  /* グラデではなく不透明な単色で確実に読める */
+  color:#c026a0;
+  text-shadow:
+    0 0 60px rgba(232,74,156,.5),
+    0 0 120px rgba(180,148,232,.35),
+    4px 6px 0 rgba(255,255,255,.7),
+    -1px -1px 0 rgba(255,255,255,.5);
+  animation:big-num-in .65s cubic-bezier(.17,.67,.3,1.4) both;
+  text-align:center;
+  max-width:96vw;
+  word-break:break-all;
+  flex-shrink:0;
 }
-#result-num-big.multi{font-size:clamp(36px,7vw,72px);line-height:1.2;}
-@keyframes big-num-in{0%{transform:scale(.2) rotate(-15deg);opacity:0;}60%{transform:scale(1.12) rotate(3deg);}80%{transform:scale(.97) rotate(-1deg);}100%{transform:scale(1) rotate(0);}}
+#result-num-big.multi{
+  font-size:clamp(52px,11vw,130px);
+  line-height:1.2;
+  padding:0 6vw;
+}
+@keyframes big-num-in{
+  0%{transform:scale(.1) rotate(-20deg);opacity:0;}
+  55%{transform:scale(1.1) rotate(4deg);}
+  80%{transform:scale(.97) rotate(-1deg);}
+  100%{transform:scale(1) rotate(0);}
+}
+
 #result-label{
   font-family:'Zen Maru Gothic',sans-serif;font-weight:900;
-  font-size:clamp(13px,2vw,20px);letter-spacing:.35em;color:var(--pink-deep);
-  margin-top:8px;animation:fadeup .5s .3s ease both;flex-shrink:0;
+  font-size:clamp(13px,2vw,20px);letter-spacing:.35em;
+  color:var(--pink-deep);
+  animation:fadeup .5s .3s ease both;flex-shrink:0;
 }
 #result-history-strip{
-  margin-top:16px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
-  max-width:min(90vw,600px);animation:fadeup .5s .5s ease both;
-  max-height:25vh;overflow-y:auto;flex-shrink:0;
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+  max-width:min(90vw,600px);
+  animation:fadeup .5s .5s ease both;
+  max-height:18vh;overflow-y:auto;flex-shrink:0;
+  padding:0 10px;
 }
 @keyframes fadeup{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
 .rhi{
@@ -625,31 +669,38 @@ html,body{
 
 <!-- ── RESULT SCREEN ── -->
 <div id="result-screen">
-  <div id="result-cat-wrap">
+
+  <!-- 猫：背景レイヤー -->
+  <div id="result-cat-bg">
     <svg viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
-      <ellipse cx="150" cy="225" rx="80" ry="8" fill="rgba(180,120,200,.25)"/>
-      <ellipse cx="150" cy="190" rx="75" ry="45" fill="#ffffff"/>
-      <ellipse cx="115" cy="220" rx="18" ry="12" fill="#ffffff"/>
-      <ellipse cx="185" cy="220" rx="18" ry="12" fill="#ffffff"/>
-      <ellipse cx="85" cy="155" rx="14" ry="22" fill="#ffffff" transform="rotate(-30 85 155)"/>
-      <ellipse cx="215" cy="155" rx="14" ry="22" fill="#ffffff" transform="rotate(30 215 155)"/>
-      <circle cx="150" cy="135" r="55" fill="#ffffff"/>
-      <path d="M 105,105 L 95,65 L 130,90 Z" fill="#ffffff"/>
-      <path d="M 110,98 L 105,78 L 122,90 Z" fill="#ffb3d1"/>
-      <path d="M 195,105 L 205,65 L 170,90 Z" fill="#ffffff"/>
-      <path d="M 190,98 L 195,78 L 178,90 Z" fill="#ffb3d1"/>
-      <circle cx="115" cy="145" r="10" fill="#ffc8dc" opacity=".7"/>
-      <circle cx="185" cy="145" r="10" fill="#ffc8dc" opacity=".7"/>
-      <path d="M 120,132 Q 130,124 140,132" stroke="#4a3960" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <path d="M 160,132 Q 170,124 180,132" stroke="#4a3960" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <path d="M 145,145 L 155,145 L 150,150 Z" fill="#ff8eb8"/>
-      <path d="M 138,150 Q 150,162 162,150" stroke="#4a3960" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="150" cy="225" rx="80" ry="8" fill="rgba(180,120,200,.15)"/>
+      <ellipse cx="150" cy="190" rx="75" ry="45" fill="rgba(255,255,255,.55)"/>
+      <ellipse cx="115" cy="220" rx="18" ry="12" fill="rgba(255,255,255,.55)"/>
+      <ellipse cx="185" cy="220" rx="18" ry="12" fill="rgba(255,255,255,.55)"/>
+      <ellipse cx="85" cy="155" rx="14" ry="22" fill="rgba(255,255,255,.55)" transform="rotate(-30 85 155)"/>
+      <ellipse cx="215" cy="155" rx="14" ry="22" fill="rgba(255,255,255,.55)" transform="rotate(30 215 155)"/>
+      <circle cx="150" cy="135" r="55" fill="rgba(255,255,255,.55)"/>
+      <path d="M 105,105 L 95,65 L 130,90 Z" fill="rgba(255,255,255,.55)"/>
+      <path d="M 110,98 L 105,78 L 122,90 Z" fill="rgba(255,179,209,.45)"/>
+      <path d="M 195,105 L 205,65 L 170,90 Z" fill="rgba(255,255,255,.55)"/>
+      <path d="M 190,98 L 195,78 L 178,90 Z" fill="rgba(255,179,209,.45)"/>
+      <circle cx="115" cy="145" r="10" fill="rgba(255,200,220,.45)"/>
+      <circle cx="185" cy="145" r="10" fill="rgba(255,200,220,.45)"/>
+      <path d="M 120,132 Q 130,124 140,132" stroke="rgba(180,148,232,.5)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M 160,132 Q 170,124 180,132" stroke="rgba(180,148,232,.5)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M 145,145 L 155,145 L 150,150 Z" fill="rgba(255,142,184,.5)"/>
+      <path d="M 138,150 Q 150,162 162,150" stroke="rgba(180,148,232,.5)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
     </svg>
   </div>
-  <div id="result-num-big"></div>
-  <div id="result-label">★ お告げ ★</div>
-  <div id="result-history-strip"></div>
-  <button id="result-continue-btn" onclick="closeResultScreen()">続けて引く</button>
+
+  <!-- 前景コンテンツ -->
+  <div id="result-content">
+    <div id="result-num-big"></div>
+    <div id="result-label">★ お告げ ★</div>
+    <div id="result-history-strip"></div>
+    <button id="result-continue-btn" onclick="closeResultScreen()">続けて引く</button>
+  </div>
+
 </div>
 
 <script>
